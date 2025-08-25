@@ -14,7 +14,7 @@ type Employee = {
 };
 
 type EmployeeListProps = {
-  employees?: Employee[]; // make it optional
+  employees?: Employee[]; // optional
   setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
 };
 
@@ -23,6 +23,16 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
   const [commissionInputs, setCommissionInputs] = useState<{
     [key: number]: { name: string; value: number; type: "Fixed" | "Percentage" };
   }>({});
+
+  // Commission options
+  const commissionOptions = [
+    "Acquisition Agent",
+    "Disposition Agent",
+    "General Manager",
+    "Transaction Coordinator",
+    "Underwriter",
+    "Other",
+  ] as const;
 
   // Add employee
   const addEmployee = () => {
@@ -91,9 +101,8 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
 
             {/* Add Commission Form */}
             <div className="flex space-x-2 mb-2">
-              <input
-                type="text"
-                placeholder="Commission Name"
+              {/* Commission Name Dropdown */}
+              <select
                 value={commissionInputs[emp.id]?.name || ""}
                 onChange={(e) =>
                   setCommissionInputs((prev) => ({
@@ -107,7 +116,18 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                   }))
                 }
                 className="border p-1 rounded-md flex-1"
-              />
+              >
+                <option value="" disabled>
+                  Select Commission
+                </option>
+                {commissionOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+
+              {/* Commission Value */}
               <input
                 type="number"
                 placeholder="Value"
@@ -125,6 +145,8 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 }
                 className="border p-1 rounded-md w-20"
               />
+
+              {/* Commission Type */}
               <select
                 value={commissionInputs[emp.id]?.type || "Fixed"}
                 onChange={(e) =>
@@ -143,6 +165,8 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 <option value="Fixed">Fixed</option>
                 <option value="Percentage">Percentage</option>
               </select>
+
+              {/* Add Commission Button */}
               <button
                 onClick={() => addCommission(emp.id)}
                 className="bg-green-600 text-white px-2 py-1 rounded-md hover:bg-green-700"
