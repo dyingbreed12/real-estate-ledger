@@ -1,31 +1,33 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const navItems = [
+  const links = [
     { name: "Dashboard", href: "/" },
     { name: "Crystal Ball", href: "/crystal-ball" },
   ];
 
   return (
-    <aside className="w-64 bg-white shadow-md h-screen p-6 flex flex-col">
-      <h1 className="text-2xl font-bold mb-8 text-purple-700">Ledger App</h1>
-
+    <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg p-6">
+      <h1 className="text-xl font-bold mb-6">Ledger App</h1>
       <nav className="flex flex-col space-y-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors ${
-              pathname === item.href ? "bg-purple-200 font-semibold" : ""
-            }`}
-          >
-            {item.name}
-          </Link>
+        {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className={`
+            p-2 rounded-md 
+            focus:outline-none focus:ring-2 focus:ring-blue-400
+            ${pathname === link.href 
+              ? "bg-blue-600 text-white font-semibold" 
+              : "text-gray-700 hover:bg-gray-100"} 
+          `}
+        >
+          {link.name}
+        </Link>
         ))}
       </nav>
     </aside>

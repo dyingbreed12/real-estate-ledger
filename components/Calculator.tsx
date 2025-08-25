@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Donut from "@/components/charts/Donut";
 
 type Commission = {
@@ -16,82 +16,89 @@ type Employee = {
 
 type CalculatorProps = {
   employees?: Employee[];
+  assignmentFee: number;
+  setAssignmentFee: React.Dispatch<React.SetStateAction<number>>;
   ownershipType: "Direct" | "JV Split";
   setOwnershipType: React.Dispatch<React.SetStateAction<"Direct" | "JV Split">>;
   ownershipPercentage: number;
   setOwnershipPercentage: React.Dispatch<React.SetStateAction<number>>;
 };
 
-type CalculatorView = "Assignment" | "Novation";
-
 export default function Calculator({
   employees = [],
+  assignmentFee,
+  setAssignmentFee,
   ownershipType,
   setOwnershipType,
   ownershipPercentage,
   setOwnershipPercentage,
 }: CalculatorProps) {
-  const [assignmentFee, setAssignmentFee] = useState(20000);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number>(
     employees.length > 0 ? employees[0].id : 0
   );
-  const [view, setView] = useState<CalculatorView>("Assignment");
 
-  const selectedEmployee = employees.find(emp => emp.id === selectedEmployeeId);
+  const [plMode, setPlMode] = useState<"Assignment" | "Novation">("Assignment");
+
+  const selectedEmployee = employees.find((emp) => emp.id === selectedEmployeeId);
 
   // Calculate commission amounts
   const commissionAmounts = useMemo(() => {
     if (!selectedEmployee) return [];
-    return selectedEmployee.commissions.map(c => {
-      const amount =
-        c.type === "Fixed"
-          ? c.value
-          : (assignmentFee * c.value) / 100;
+    return selectedEmployee.commissions.map((c) => {
+      let amount = c.type === "Fixed" ? c.value : (assignmentFee * c.value) / 100;
+
+      if (plMode === "Novation") {
+        amount *= 0.9; // Example Novation logic
+      }
+
       return amount;
     });
-  }, [selectedEmployee, assignmentFee]);
+  }, [selectedEmployee, assignmentFee, plMode]);
 
   const totalCommission = useMemo(() => {
     return commissionAmounts.reduce((sum, val) => sum + val, 0);
   }, [commissionAmounts]);
 
-  // Calculate net profit differently for Assignment vs Novation
   const netProfit = useMemo(() => {
-    if (!selectedEmployee) return 0;
     const ownershipMultiplier = ownershipType === "Direct" ? 1 : ownershipPercentage / 100;
+    let baseProfit = assignmentFee * ownershipMultiplier - totalCommission;
 
-    if (view === "Assignment") {
-      // Assignment P&L formula
-      return assignmentFee * ownershipMultiplier - totalCommission;
-    } else {
-      // Novation P&L formula
-      // Example: Novation might have 10% fee deduction before ownership
-      const novationFee = assignmentFee * 0.1;
-      return (assignmentFee - novationFee) * ownershipMultiplier - totalCommission;
+    if (plMode === "Novation") {
+      baseProfit *= 0.95; // Example Novation adjustment
     }
-  }, [assignmentFee, totalCommission, ownershipType, ownershipPercentage, view]);
+
+    return baseProfit;
+  }, [assignmentFee, totalCommission, ownershipType, ownershipPercentage, plMode]);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6">
       <h2 className="text-lg font-semibold">Calculator</h2>
 
-      {/* Toggle between Assignment and Novation */}
-      <div className="flex space-x-2 mb-4">
-        <button
-          className={`px-4 py-2 rounded-md ${view === "Assignment" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setView("Assignment")}
-        >
-          Assignment P&L
-        </button>
-        <button
-          className={`px-4 py-2 rounded-md ${view === "Novation" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setView("Novation")}
-        >
-          Novation P&L
-        </button>
+      {/* P&L Mode Toggle */}
+      <div className="flex space-x-4 mb-4">
+        <label className="flex items-center space-x-2">
+          <input
+            type="radio"
+            name="plMode"
+            value="Assignment"
+            checked={plMode === "Assignment"}
+            onChange={() => setPlMode("Assignment")}
+          />
+          <span>Assignment P&L</span>
+        </label>
+        <label className="flex items-center space-x-2">
+          <input
+            type="radio"
+            name="plMode"
+            value="Novation"
+            checked={plMode === "Novation"}
+            onChange={() => setPlMode("Novation")}
+          />
+          <span>Novation P&L</span>
+        </label>
       </div>
 
-      {/* Assignment Fee & Ownership Inputs */}
+      {/* Assignment Fee and Ownership */}
       <div className="flex space-x-4">
         <input
           type="number"
@@ -100,6 +107,7 @@ export default function Calculator({
           className="border p-2 rounded-md flex-1"
           placeholder="Assignment Fee"
         />
+
         <select
           value={ownershipType}
           onChange={(e) => setOwnershipType(e.target.value as "Direct" | "JV Split")}
@@ -108,25 +116,31 @@ export default function Calculator({
           <option value="Direct">Direct</option>
           <option value="JV Split">JV Split</option>
         </select>
+
         {ownershipType === "JV Split" && (
-          <input
-            type="number"
+          <select
             value={ownershipPercentage}
             onChange={(e) => setOwnershipPercentage(Number(e.target.value))}
             className="border p-2 rounded-md w-20"
-          />
+          >
+            {Array.from({ length: 9 }, (_, i) => (i + 1) * 10).map((val) => (
+              <option key={val} value={val}>
+                {val}%
+              </option>
+            ))}
+          </select>
         )}
       </div>
 
       {/* Employee Selection */}
-      {employees.length > 0 ? (
+      {employees.length > 0 && (
         <div>
           <select
             value={selectedEmployeeId}
             onChange={(e) => setSelectedEmployeeId(Number(e.target.value))}
             className="border p-2 rounded-md w-full mb-2"
           >
-            {employees.map(emp => (
+            {employees.map((emp) => (
               <option key={emp.id} value={emp.id}>
                 {emp.name}
               </option>
@@ -137,25 +151,19 @@ export default function Calculator({
             Total Commissions: ${totalCommission.toLocaleString()}
           </div>
         </div>
-      ) : (
-        <p className="text-gray-500">No employees available for calculations.</p>
       )}
 
-      {/* Donut Chart for commissions */}
+      {/* Donut Chart */}
       {selectedEmployee && selectedEmployee.commissions.length > 0 ? (
-        <Donut
-          labels={selectedEmployee.commissions.map(c => c.name)}
-          data={commissionAmounts}
-        />
+        <Donut labels={selectedEmployee.commissions.map((c) => c.name)} data={commissionAmounts} />
       ) : (
         <p className="text-gray-500">No commissions to display.</p>
       )}
 
       {/* Net Profit */}
       <div className="text-lg font-medium mt-4">
-        {view} Net Profit: ${netProfit.toLocaleString()}
+        Net Profit: ${netProfit.toLocaleString()}
       </div>
     </div>
   );
-} 
-
+}

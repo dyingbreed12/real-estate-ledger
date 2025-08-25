@@ -1,33 +1,74 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EmployeeList from "@/components/EmployeeList";
 import Address from "@/components/Address";
 import Calculator from "@/components/Calculator";
 import Graphs from "@/components/Graphs";
 
-type Commission = {
-  name: string;
-  value: number;
-  type: "Fixed" | "Percentage";
-};
-
-type Employee = {
-  id: number;
-  name: string;
-  commissions: Commission[];
-};
-
 export default function DashboardPage() {
-  // Global state for employees
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  // Employees
+  const [employees, setEmployees] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("employees");
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
 
-  // Global state for address and ownership
-  const [address, setAddress] = useState("");
-  const [ownershipType, setOwnershipType] = useState<"Direct" | "JV Split">("Direct");
-  const [ownershipPercentage, setOwnershipPercentage] = useState(50);
+  // Address & Ownership
+  const [address, setAddress] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("address") || "";
+    }
+    return "";
+  });
+
+  const [ownershipType, setOwnershipType] = useState<"Direct" | "JV Split">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("ownershipType") as "Direct" | "JV Split") || "Direct";
+    }
+    return "Direct";
+  });
+
+  const [ownershipPercentage, setOwnershipPercentage] = useState(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("ownershipPercentage");
+      return val ? Number(val) : 50;
+    }
+    return 50;
+  });
+
+  const [assignmentFee, setAssignmentFee] = useState(() => {
+    if (typeof window !== "undefined") {
+      const val = localStorage.getItem("assignmentFee");
+      return val ? Number(val) : 20000;
+    }
+    return 20000;
+  });
+
+  // Save to localStorage when values change
+  useEffect(() => {
+    localStorage.setItem("employees", JSON.stringify(employees));
+  }, [employees]);
+
+  useEffect(() => {
+    localStorage.setItem("address", address);
+  }, [address]);
+
+  useEffect(() => {
+    localStorage.setItem("ownershipType", ownershipType);
+  }, [ownershipType]);
+
+  useEffect(() => {
+    localStorage.setItem("ownershipPercentage", ownershipPercentage.toString());
+  }, [ownershipPercentage]);
+
+  useEffect(() => {
+    localStorage.setItem("assignmentFee", assignmentFee.toString());
+  }, [assignmentFee]);
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8">
       <section id="employees">
         <EmployeeList employees={employees} setEmployees={setEmployees} />
       </section>
@@ -46,6 +87,8 @@ export default function DashboardPage() {
       <section id="calculator">
         <Calculator
           employees={employees}
+          assignmentFee={assignmentFee}
+          setAssignmentFee={setAssignmentFee}
           ownershipType={ownershipType}
           setOwnershipType={setOwnershipType}
           ownershipPercentage={ownershipPercentage}
