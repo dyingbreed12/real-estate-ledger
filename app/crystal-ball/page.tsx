@@ -16,6 +16,10 @@ export default function CrystalBallPage() {
     <div className="p-6 bg-gray-50 min-h-screen space-y-6 -mt-12">
       <h1 className="text-2xl font-bold">Crystal Ball Forecast</h1>
 
+      {/* Message */}
+      <p className="text-gray-600 text-sm mt-1">
+        Forecast your earnings and plan like a real company
+      </p>
       {/* Form Inputs */}
       <div className="bg-white p-6 rounded-2xl shadow space-y-4">
         <div className="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0">
