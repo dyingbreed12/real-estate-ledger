@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import EmployeeList from "@/components/EmployeeList";
+import type { Employee } from "@/app/types"; // import shared type
 import Address from "@/components/Address";
 import Calculator from "@/components/Calculator";
 import Widgets from "@/components/Widgets";
@@ -10,7 +11,7 @@ export default function DashboardPage() {
   const [hydrated, setHydrated] = useState(false);
 
   // Employees
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]); // replace any[] with Employee[]
 
   // Address & Ownership
   const [address, setAddress] = useState("");

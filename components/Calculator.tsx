@@ -1,18 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import Donut from "@/components/charts/Donut";
-
-type Commission = {
-  name: string;
-  value: number;
-  type: "Fixed" | "Percentage";
-};
-
-type Employee = {
-  id: number;
-  name: string;
-  commissions: Commission[];
-};
+import type { Employee } from "@/app/types";
 
 type CalculatorProps = {
   employees?: Employee[];
@@ -45,7 +33,7 @@ export default function Calculator({
   const commissionAmounts = useMemo(() => {
     if (!selectedEmployee) return [];
     return selectedEmployee.commissions.map((c) => {
-      let amount = c.type === "Fixed" ? c.value : (assignmentFee * c.value) / 100;
+      let amount = c.type === "Direct" ? c.value : (assignmentFee * c.value) / 100;
 
       if (plMode === "Novation") {
         amount *= 0.9; // Example Novation logic

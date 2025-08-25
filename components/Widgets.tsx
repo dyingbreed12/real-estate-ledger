@@ -1,16 +1,6 @@
 "use client";
+import type { Employee } from "@/app/types";
 
-type Commission = {
-  name: string;
-  value: number;
-  type: "Fixed" | "Percentage";
-};
-
-type Employee = {
-  id: number;
-  name: string;
-  commissions: Commission[];
-};
 
 type WidgetsProps = {
   employees: Employee[];
@@ -28,7 +18,7 @@ export default function Widgets({
   // Calculate total commissions
   const totalCommissions = employees.reduce((sum, emp) => {
     const empTotal = emp.commissions.reduce((empSum, c) => {
-      const val = c.type === "Fixed" ? c.value : (assignmentFee * c.value) / 100;
+      const val = c.type === "Direct" ? c.value : (assignmentFee * c.value) / 100;
       return empSum + val;
     }, 0);
     return sum + empTotal;

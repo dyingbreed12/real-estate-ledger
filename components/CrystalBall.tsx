@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import Image from "next/image";
 type CrystalBallProps = {
   dealsPerMonth?: number;
   avgAssignmentFee?: number;
@@ -40,8 +40,8 @@ export default function CrystalBall({
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6 flex flex-col items-center">
-      <h2 className="text-2xl font-semibold text-center">🔮 Crystal Ball Forecast</h2>
-
+      <h2 className="text-2xl font-semibold text-center"> Crystal Ball Forecast</h2>
+{/* 🔮 */}
       {/* Crystal Ball Image */}
       <div
         onClick={handleClick}
@@ -61,10 +61,12 @@ export default function CrystalBall({
         <div className="absolute w-32 h-32 rounded-full bg-white/20 rounded-t-full transform rotate-12 pointer-events-none"></div>
 
         {/* Crystal Ball Image */}
-        <img
-          src="/crystal-ball.png"
+        <Image
+          src="/crystal-ball1.png"
           alt="Crystal Ball"
-          className="w-24 h-24 z-10 object-contain drop-shadow-xl"
+          width={250}   // replace with desired width
+          height={250}  // replace with desired height
+          className="w-32 h-32"
         />
       </div>
 

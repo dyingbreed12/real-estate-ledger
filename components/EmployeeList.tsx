@@ -1,20 +1,9 @@
 "use client";
 import { useState } from "react";
-
-type Commission = {
-  name: string;
-  value: number;
-  type: "Direct" | "JV Split";
-};
-
-type Employee = {
-  id: number;
-  name: string;
-  commissions: Commission[];
-};
+import type { Employee } from "@/app/types"; // import shared types
 
 type EmployeeListProps = {
-  employees?: Employee[]; // optional
+  employees?: Employee[];
   setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
 };
 
@@ -201,7 +190,7 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 onClick={() => addCommission(emp.id)}
                 className="bg-green-600 text-white px-2 py-1 rounded-md hover:bg-green-700"
               >
-                Add
+                Add Commission
               </button>
             </div>
 

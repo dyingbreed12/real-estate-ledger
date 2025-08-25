@@ -13,7 +13,7 @@ export default function CrystalBallPage() {
   const ownershipOptions = Array.from({ length: 9 }, (_, i) => (i + 1) * 10);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-6 bg-gray-50 min-h-screen space-y-6 -mt-12">
       <h1 className="text-2xl font-bold">Crystal Ball Forecast</h1>
 
       {/* Form Inputs */}
