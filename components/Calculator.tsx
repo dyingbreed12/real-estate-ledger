@@ -153,13 +153,6 @@ export default function Calculator({
         </div>
       )}
 
-      {/* Donut Chart */}
-      {selectedEmployee && selectedEmployee.commissions.length > 0 ? (
-        <Donut labels={selectedEmployee.commissions.map((c) => c.name)} data={commissionAmounts} />
-      ) : (
-        <p className="text-gray-500">No commissions to display.</p>
-      )}
-
       {/* Net Profit */}
       <div className="text-lg font-medium mt-4">
         Net Profit: ${netProfit.toLocaleString()}

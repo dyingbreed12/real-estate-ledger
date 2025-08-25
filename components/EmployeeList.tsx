@@ -4,7 +4,7 @@ import { useState } from "react";
 type Commission = {
   name: string;
   value: number;
-  type: "Fixed" | "Percentage";
+  type: "Direct" | "JV Split";
 };
 
 type Employee = {
@@ -21,10 +21,10 @@ type EmployeeListProps = {
 export default function EmployeeList({ employees = [], setEmployees }: EmployeeListProps) {
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [commissionInputs, setCommissionInputs] = useState<{
-    [key: number]: { name: string; value: number; type: "Fixed" | "Percentage" };
+    [key: number]: { name: string; value: number; type: "Direct" | "JV Split" };
   }>({});
 
-  // Commission options
+  // Commission name options
   const commissionOptions = [
     "Acquisition Agent",
     "Disposition Agent",
@@ -33,6 +33,9 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     "Underwriter",
     "Other",
   ] as const;
+
+  // JV Split percentage options 10%-90%
+  const jvSplitOptions = Array.from({ length: 9 }, (_, i) => (i + 1) * 10);
 
   // Add employee
   const addEmployee = () => {
@@ -57,10 +60,10 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
       )
     );
 
-    // Clear input for this employee
+    // Reset inputs
     setCommissionInputs((prev) => ({
       ...prev,
-      [empId]: { name: "", value: 0, type: "Fixed" },
+      [empId]: { name: "", value: 50, type: "Direct" }, // default value
     }));
   };
 
@@ -68,7 +71,7 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     <div className="bg-white p-6 rounded-2xl shadow">
       <h2 className="text-lg font-semibold mb-4">Employee List</h2>
 
-      {/* Add Employee Form */}
+      {/* Add Employee */}
       <div className="flex mb-4 space-x-2">
         <input
           type="text"
@@ -100,8 +103,8 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
             </div>
 
             {/* Add Commission Form */}
-            <div className="flex space-x-2 mb-2">
-              {/* Commission Name Dropdown */}
+            <div className="flex space-x-2 mb-2 items-center">
+              {/* Commission Name */}
               <select
                 value={commissionInputs[emp.id]?.name || ""}
                 onChange={(e) =>
@@ -110,12 +113,12 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                     [emp.id]: {
                       ...prev[emp.id],
                       name: e.target.value,
-                      value: prev[emp.id]?.value || 0,
-                      type: prev[emp.id]?.type || "Fixed",
+                      value: prev[emp.id]?.value || 50,
+                      type: prev[emp.id]?.type || "Direct",
                     },
                   }))
                 }
-                className="border p-1 rounded-md flex-1"
+                className="border p-1 rounded-md w-48"
               >
                 <option value="" disabled>
                   Select Commission
@@ -127,44 +130,71 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 ))}
               </select>
 
-              {/* Commission Value */}
-              <input
-                type="number"
-                placeholder="Value"
-                value={commissionInputs[emp.id]?.value || 0}
-                onChange={(e) =>
-                  setCommissionInputs((prev) => ({
-                    ...prev,
-                    [emp.id]: {
-                      ...prev[emp.id],
-                      value: Number(e.target.value),
-                      name: prev[emp.id]?.name || "",
-                      type: prev[emp.id]?.type || "Fixed",
-                    },
-                  }))
-                }
-                className="border p-1 rounded-md w-20"
-              />
-
-              {/* Commission Type */}
+              {/* Type Dropdown */}
               <select
-                value={commissionInputs[emp.id]?.type || "Fixed"}
+                value={commissionInputs[emp.id]?.type || "Direct"}
                 onChange={(e) =>
                   setCommissionInputs((prev) => ({
                     ...prev,
                     [emp.id]: {
                       ...prev[emp.id],
-                      type: e.target.value as "Fixed" | "Percentage",
+                      type: e.target.value as "Direct" | "JV Split",
+                      value:
+                        e.target.value === "JV Split"
+                          ? 50
+                          : prev[emp.id]?.value || 0,
                       name: prev[emp.id]?.name || "",
-                      value: prev[emp.id]?.value || 0,
                     },
                   }))
                 }
-                className="border p-1 rounded-md"
+                className="border p-1 rounded-md w-32"
               >
-                <option value="Fixed">Fixed</option>
-                <option value="Percentage">Percentage</option>
+                <option value="Direct">Direct</option>
+                <option value="JV Split">JV Split</option>
               </select>
+
+              {/* Value Input / Dropdown */}
+              {commissionInputs[emp.id]?.type === "JV Split" ? (
+                <select
+                  value={commissionInputs[emp.id]?.value || 50}
+                  onChange={(e) =>
+                    setCommissionInputs((prev) => ({
+                      ...prev,
+                      [emp.id]: {
+                        ...prev[emp.id],
+                        value: Number(e.target.value),
+                        name: prev[emp.id]?.name || "",
+                        type: prev[emp.id]?.type || "JV Split",
+                      },
+                    }))
+                  }
+                  className="border p-1 rounded-md w-24"
+                >
+                  {jvSplitOptions.map((v) => (
+                    <option key={v} value={v}>
+                      {v}%
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  placeholder="Value"
+                  value={commissionInputs[emp.id]?.value || 0}
+                  onChange={(e) =>
+                    setCommissionInputs((prev) => ({
+                      ...prev,
+                      [emp.id]: {
+                        ...prev,
+                        value: Number(e.target.value),
+                        name: prev[emp.id]?.name || "",
+                        type: prev[emp.id]?.type || "Direct",
+                      },
+                    }))
+                  }
+                  className="border p-1 rounded-md w-24"
+                />
+              )}
 
               {/* Add Commission Button */}
               <button
@@ -180,7 +210,7 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
               {emp.commissions.map((c, idx) => (
                 <li key={idx}>
                   {c.name}: {c.value}
-                  {c.type === "Percentage" ? "%" : "$"}
+                  {c.type === "JV Split" ? "%" : "$"} ({c.type})
                 </li>
               ))}
             </ul>
