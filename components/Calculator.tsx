@@ -58,7 +58,7 @@ export default function Calculator({
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6">
-      <h2 className="text-lg font-semibold">Calculator</h2>
+      <h2 className="text-lg font-semibold">Profit Calculator</h2>
 
       {/* P&L Mode Toggle */}
       <div className="flex space-x-4 mb-4">
@@ -70,7 +70,7 @@ export default function Calculator({
             checked={plMode === "Assignment"}
             onChange={() => setPlMode("Assignment")}
           />
-          <span>Assignment P&L</span>
+          <span>Assignment</span>
         </label>
         <label className="flex items-center space-x-2">
           <input
@@ -80,7 +80,7 @@ export default function Calculator({
             checked={plMode === "Novation"}
             onChange={() => setPlMode("Novation")}
           />
-          <span>Novation P&L</span>
+          <span>Novation</span>
         </label>
       </div>
 
