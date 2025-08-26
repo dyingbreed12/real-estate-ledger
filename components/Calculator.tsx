@@ -38,6 +38,13 @@ export default function Calculator({
     closingCostsPercentage: 2,
   });
 
+  // Ensure the selected employee is up-to-date with the latest employees data
+  useEffect(() => {
+    if (employees.length > 0 && !employees.some(emp => emp.id === selectedEmployeeId)) {
+      setSelectedEmployeeId(employees[0].id);
+    }
+  }, [employees, selectedEmployeeId]);
+
   const selectedEmployee = employees.find((emp) => emp.id === selectedEmployeeId);
 
   // Novation-specific calculations
@@ -78,7 +85,7 @@ export default function Calculator({
         : (yourAssignmentFee * c.commissionValue) / 100;
       return total + calculatedAmount;
     }, 0);
-  }, [selectedEmployee, yourAssignmentFee]);
+  }, [selectedEmployee, yourAssignmentFee, employees]); // Added employees to the dependency array
 
   const totalExpenses = useMemo(() => {
     const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
