@@ -99,7 +99,7 @@ export default function Calculator({
   }, [grossProfit, assignmentFee, totalAssignmentFeeNovation, plMode]);
 
   const netProfit = useMemo(() => {
-    let baseProfit = grossProfit - totalExpenses;
+    const baseProfit = grossProfit - totalExpenses;
 
     if (plMode === "Novation") {
         return baseProfit
