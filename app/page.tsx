@@ -2,33 +2,24 @@
 
 import { useState, useEffect } from "react";
 import EmployeeList from "@/components/EmployeeList";
-import type { Employee } from "@/app/types"; // import shared type
+import type { Employee, OwnershipType } from "@/app/types";
 import Address from "@/components/Address";
 import Calculator from "@/components/Calculator";
 import Widgets from "@/components/Widgets";
 
 export default function DashboardPage() {
   const [hydrated, setHydrated] = useState(false);
-
-  // Employees
-  const [employees, setEmployees] = useState<Employee[]>([]); // replace any[] with Employee[]
-
-  // Address & Ownership
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [address, setAddress] = useState("");
-  const [ownershipType, setOwnershipType] = useState<"Direct" | "JV Split">("Direct");
+  const [ownershipType, setOwnershipType] = useState<OwnershipType>("Direct");
   const [ownershipPercentage, setOwnershipPercentage] = useState(50);
-
-  // Assignment Fee
   const [assignmentFee, setAssignmentFee] = useState(20000);
 
-  // Load from localStorage on client
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedEmployees = localStorage.getItem("employees");
       const storedAddress = localStorage.getItem("address");
-      const storedOwnershipType = localStorage.getItem("ownershipType") as
-        | "Direct"
-        | "JV Split";
+      const storedOwnershipType = localStorage.getItem("ownershipType") as OwnershipType;
       const storedOwnershipPercentage = localStorage.getItem("ownershipPercentage");
       const storedAssignmentFee = localStorage.getItem("assignmentFee");
 
@@ -41,7 +32,6 @@ export default function DashboardPage() {
     setHydrated(true);
   }, []);
 
-  // Save to localStorage when values change
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem("employees", JSON.stringify(employees));
@@ -67,8 +57,7 @@ export default function DashboardPage() {
     localStorage.setItem("assignmentFee", assignmentFee.toString());
   }, [assignmentFee, hydrated]);
 
-  if (!hydrated)
-    return <p className="text-center mt-10 text-gray-500">Loading dashboard...</p>;
+  if (!hydrated) return <p className="text-center mt-10 text-gray-500">Loading dashboard...</p>;
 
   return (
     <div className="space-y-8 pt-4 -mt-12">

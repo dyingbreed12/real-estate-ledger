@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { Employee } from "@/app/types"; // import shared types
+import type { Employee, Commission } from "@/app/types";
 
 type EmployeeListProps = {
   employees?: Employee[];
@@ -10,10 +10,16 @@ type EmployeeListProps = {
 export default function EmployeeList({ employees = [], setEmployees }: EmployeeListProps) {
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [commissionInputs, setCommissionInputs] = useState<{
-    [key: number]: { name: string; value: number; type: "Direct" | "JV Split" };
+    [key: number]: {
+      name: string;
+      salaryValue: number;
+      commissionValue: number;
+    };
   }>({});
 
-  // Commission name options
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+
   const commissionOptions = [
     "Acquisition Agent",
     "Disposition Agent",
@@ -23,10 +29,6 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     "Other",
   ] as const;
 
-  // JV Split percentage options 10%-90%
-  const jvSplitOptions = Array.from({ length: 9 }, (_, i) => (i + 1) * 10);
-
-  // Add employee
   const addEmployee = () => {
     if (!newEmployeeName.trim()) return;
     setEmployees([
@@ -36,23 +38,68 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     setNewEmployeeName("");
   };
 
-  // Add commission to employee
+  const confirmRemoveEmployee = (emp: Employee) => {
+    setEmployeeToDelete(emp);
+    setIsModalOpen(true);
+  };
+
+  const handleRemoveEmployee = () => {
+    if (employeeToDelete) {
+      setEmployees((prev) => prev.filter((emp) => emp.id !== employeeToDelete.id));
+      setEmployeeToDelete(null);
+      setIsModalOpen(false);
+    }
+  };
+
   const addCommission = (empId: number) => {
     const input = commissionInputs[empId];
-    if (!input?.name || input.value === undefined) return;
+    if (!input?.name || (input.salaryValue <= 0 && input.commissionValue <= 0)) {
+      return;
+    }
+
+    const newCommissionRecord: Commission = {
+      name: input.name,
+      salaryValue: input.salaryValue,
+      commissionValue: input.commissionValue,
+    };
 
     setEmployees((prev) =>
       prev.map((emp) =>
         emp.id === empId
-          ? { ...emp, commissions: [...emp.commissions, input] }
+          ? { ...emp, commissions: [...emp.commissions, newCommissionRecord] }
           : emp
       )
     );
 
-    // Reset inputs
     setCommissionInputs((prev) => ({
       ...prev,
-      [empId]: { name: "", value: 50, type: "Direct" }, // default value
+      [empId]: { name: "", salaryValue: 0, commissionValue: 0 },
+    }));
+  };
+
+  const removeCommission = (empId: number, commIdx: number) => {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === empId
+          ? {
+              ...emp,
+              commissions: emp.commissions.filter((_, idx) => idx !== commIdx),
+            }
+          : emp
+      )
+    );
+  };
+
+  const handleInputChange = (empId: number, field: string, value: number | string) => {
+    setCommissionInputs((prev) => ({
+      ...prev,
+      [empId]: {
+        ...prev[empId],
+        name: prev[empId]?.name || "",
+        salaryValue: prev[empId]?.salaryValue || 0,
+        commissionValue: prev[empId]?.commissionValue || 0,
+        [field]: value,
+      },
     }));
   };
 
@@ -60,7 +107,6 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     <div className="bg-white p-6 rounded-2xl shadow">
       <h2 className="text-lg font-semibold mb-4">Employee List</h2>
 
-      {/* Add Employee */}
       <div className="flex mb-4 space-x-2">
         <input
           type="text"
@@ -71,13 +117,12 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
         />
         <button
           onClick={addEmployee}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
         >
           Add Employee
         </button>
       </div>
 
-      {/* Employee List */}
       <div className="space-y-4">
         {employees.length === 0 && (
           <p className="text-gray-500">No employees added yet.</p>
@@ -86,31 +131,26 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
           <div key={emp.id} className="border p-3 rounded-md">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">{emp.name}</span>
-              <span className="text-gray-500">
-                {emp.commissions.length} commission(s)
-              </span>
+              <button
+                onClick={() => confirmRemoveEmployee(emp)}
+                className="text-red-600 hover:text-red-800 transition-colors flex items-center space-x-1"
+                aria-label={`Remove ${emp.name}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                </svg>
+                <span>Remove</span>
+              </button>
             </div>
 
-            {/* Add Commission Form */}
             <div className="flex space-x-2 mb-2 items-center">
-              {/* Commission Name */}
               <select
                 value={commissionInputs[emp.id]?.name || ""}
-                onChange={(e) =>
-                  setCommissionInputs((prev) => ({
-                    ...prev,
-                    [emp.id]: {
-                      ...prev[emp.id],
-                      name: e.target.value,
-                      value: prev[emp.id]?.value || 50,
-                      type: prev[emp.id]?.type || "Direct",
-                    },
-                  }))
-                }
-                className="border p-1 rounded-md w-48"
+                onChange={(e) => handleInputChange(emp.id, "name", e.target.value)}
+                className="border p-1 rounded-md w-64"
               >
                 <option value="" disabled>
-                  Select Commission
+                  Select Role
                 </option>
                 {commissionOptions.map((option) => (
                   <option key={option} value={option}>
@@ -119,93 +159,90 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 ))}
               </select>
 
-              {/* Type Dropdown */}
-              <select
-                value={commissionInputs[emp.id]?.type || "Direct"}
-                onChange={(e) =>
-                  setCommissionInputs((prev) => ({
-                    ...prev,
-                    [emp.id]: {
-                      ...prev[emp.id],
-                      type: e.target.value as "Direct" | "JV Split",
-                      value:
-                        e.target.value === "JV Split"
-                          ? 50
-                          : prev[emp.id]?.value || 0,
-                      name: prev[emp.id]?.name || "",
-                    },
-                  }))
-                }
-                className="border p-1 rounded-md w-32"
-              >
-                <option value="Direct">Direct</option>
-                <option value="JV Split">JV Split</option>
-              </select>
-
-              {/* Value Input / Dropdown */}
-              {commissionInputs[emp.id]?.type === "JV Split" ? (
-                <select
-                  value={commissionInputs[emp.id]?.value || 50}
-                  onChange={(e) =>
-                    setCommissionInputs((prev) => ({
-                      ...prev,
-                      [emp.id]: {
-                        ...prev[emp.id],
-                        value: Number(e.target.value),
-                        name: prev[emp.id]?.name || "",
-                        type: prev[emp.id]?.type || "JV Split",
-                      },
-                    }))
-                  }
-                  className="border p-1 rounded-md w-24"
-                >
-                  {jvSplitOptions.map((v) => (
-                    <option key={v} value={v}>
-                      {v}%
-                    </option>
-                  ))}
-                </select>
-              ) : (
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                 <input
                   type="number"
-                  placeholder="Value"
-                  value={commissionInputs[emp.id]?.value || 0}
+                  placeholder="Salary"
+                  value={commissionInputs[emp.id]?.salaryValue || ""}
                   onChange={(e) =>
-                    setCommissionInputs((prev) => ({
-                      ...prev,
-                      [emp.id]: {
-                        ...prev,
-                        value: Number(e.target.value),
-                        name: prev[emp.id]?.name || "",
-                        type: prev[emp.id]?.type || "Direct",
-                      },
-                    }))
+                    handleInputChange(emp.id, "salaryValue", Number(e.target.value))
                   }
-                  className="border p-1 rounded-md w-24"
+                  className="border p-1 pl-6 rounded-md w-48"
                 />
-              )}
+              </div>
 
-              {/* Add Commission Button */}
+              <div className="relative">
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                <input
+                  type="number"
+                  placeholder="Commission"
+                  value={commissionInputs[emp.id]?.commissionValue || ""}
+                  onChange={(e) =>
+                    handleInputChange(emp.id, "commissionValue", Number(e.target.value))
+                  }
+                  className="border p-1 pr-6 rounded-md w-48"
+                />
+              </div>
+
               <button
                 onClick={() => addCommission(emp.id)}
-                className="bg-green-600 text-white px-2 py-1 rounded-md hover:bg-green-700"
+                className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700 transition-colors"
               >
-                Add Commission
+                Add
               </button>
             </div>
 
-            {/* List of Commissions */}
             <ul className="text-gray-700 text-sm">
               {emp.commissions.map((c, idx) => (
-                <li key={idx}>
-                  {c.name}: {c.value}
-                  {c.type === "JV Split" ? "%" : "$"} ({c.type})
+                <li key={idx} className="flex justify-between items-center">
+                  <span>
+                    {c.name}:{" "}
+                    {c.salaryValue > 0 && <>${c.salaryValue} (Salary)</>}
+                    {c.salaryValue > 0 && c.commissionValue > 0 && ", "}
+                    {c.commissionValue > 0 && <>{c.commissionValue}% (Commission)</>}
+                  </span>
+                  <button
+                    onClick={() => removeCommission(emp.id, idx)}
+                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-red-500 transition-colors"
+                    aria-label={`Remove commission for ${c.name}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                    </svg>
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
         ))}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl text-center">
+            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+            <p className="mb-6">
+              Are you sure you want to remove the employee{" "}
+              <span className="font-bold">{employeeToDelete?.name}</span>?
+            </p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRemoveEmployee}
+                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

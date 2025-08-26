@@ -1,11 +1,11 @@
 "use client";
-import type { Employee } from "@/app/types";
+import type { Employee, OwnershipType } from "@/app/types";
 
 
 type WidgetsProps = {
   employees: Employee[];
   assignmentFee: number;
-  ownershipType: "Direct" | "JV Split";
+  ownershipType: OwnershipType;
   ownershipPercentage: number;
 };
 
@@ -18,8 +18,9 @@ export default function Widgets({
   // Calculate total commissions
   const totalCommissions = employees.reduce((sum, emp) => {
     const empTotal = emp.commissions.reduce((empSum, c) => {
-      const val = c.type === "Direct" ? c.value : (assignmentFee * c.value) / 100;
-      return empSum + val;
+      // Logic now handles both salaryValue and commissionValue from the single Commission record
+      const commissionAmount = (assignmentFee * c.commissionValue) / 100;
+      return empSum + c.salaryValue + commissionAmount;
     }, 0);
     return sum + empTotal;
   }, 0);

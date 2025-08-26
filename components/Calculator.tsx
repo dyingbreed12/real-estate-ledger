@@ -1,13 +1,13 @@
 "use client";
 import { useMemo, useState } from "react";
-import type { Employee } from "@/app/types";
+import type { Employee, OwnershipType } from "@/app/types";
 
 type CalculatorProps = {
   employees?: Employee[];
   assignmentFee: number;
   setAssignmentFee: React.Dispatch<React.SetStateAction<number>>;
-  ownershipType: "Direct" | "JV Split";
-  setOwnershipType: React.Dispatch<React.SetStateAction<"Direct" | "JV Split">>;
+  ownershipType: OwnershipType;
+  setOwnershipType: React.Dispatch<React.SetStateAction<OwnershipType>>;
   ownershipPercentage: number;
   setOwnershipPercentage: React.Dispatch<React.SetStateAction<number>>;
 };
@@ -30,22 +30,20 @@ export default function Calculator({
   const selectedEmployee = employees.find((emp) => emp.id === selectedEmployeeId);
 
   // Calculate commission amounts
-  const commissionAmounts = useMemo(() => {
-    if (!selectedEmployee) return [];
-    return selectedEmployee.commissions.map((c) => {
-      let amount = c.type === "Direct" ? c.value : (assignmentFee * c.value) / 100;
-
-      if (plMode === "Novation") {
-        amount *= 0.9; // Example Novation logic
-      }
-
-      return amount;
-    });
-  }, [selectedEmployee, assignmentFee, plMode]);
-
   const totalCommission = useMemo(() => {
-    return commissionAmounts.reduce((sum, val) => sum + val, 0);
-  }, [commissionAmounts]);
+    if (!selectedEmployee) return 0;
+    
+    // Summing both salary and commission values
+    return selectedEmployee.commissions.reduce((total, c) => {
+      const commissionAmount = (assignmentFee * c.commissionValue) / 100;
+      let totalForCommission = c.salaryValue + commissionAmount;
+      
+      if (plMode === "Novation") {
+        totalForCommission *= 0.9; // Example Novation logic
+      }
+      return total + totalForCommission;
+    }, 0);
+  }, [selectedEmployee, assignmentFee, plMode]);
 
   const netProfit = useMemo(() => {
     const ownershipMultiplier = ownershipType === "Direct" ? 1 : ownershipPercentage / 100;
