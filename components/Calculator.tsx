@@ -56,9 +56,9 @@ export default function Calculator({
   }, [selectedEmployee, yourAssignmentFee, plMode]);
 
   const totalExpenses = useMemo(() => {
-    const leadGenAmount = expenses.leadGen.amount || (assignmentFee * expenses.leadGen.percentage) / 100;
-    const softwareAmount = expenses.software.amount || (assignmentFee * expenses.software.percentage) / 100;
-    const otherAmount = expenses.other.amount || (assignmentFee * expenses.other.percentage) / 100;
+    const leadGenAmount = expenses.leadGen.percentage > 0 ? (assignmentFee * expenses.leadGen.percentage) / 100 : expenses.leadGen.amount;
+    const softwareAmount = expenses.software.percentage > 0 ? (assignmentFee * expenses.software.percentage) / 100 : expenses.software.amount;
+    const otherAmount = expenses.other.percentage > 0 ? (assignmentFee * expenses.other.percentage) / 100 : expenses.other.amount;
     
     return leadGenAmount + softwareAmount + otherAmount;
   }, [assignmentFee, expenses]);
@@ -93,6 +93,18 @@ export default function Calculator({
   useEffect(() => {
     onCalculate(netProfit, netProfitMargin);
   }, [netProfit, netProfitMargin, onCalculate]);
+
+  const handleExpenseChange = (expenseKey: keyof typeof expenses, field: 'amount' | 'percentage', value: number) => {
+    setExpenses(prev => ({
+      ...prev,
+      [expenseKey]: {
+        ...prev[expenseKey],
+        [field]: value,
+        // Reset the other field to 0 when one is changed
+        [field === 'amount' ? 'percentage' : 'amount']: 0
+      }
+    }));
+  };
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6">
@@ -199,7 +211,7 @@ export default function Calculator({
             <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
               ${grossProfit.toLocaleString()}
             </span>
-          </div>
+            </div>
           <div className="flex items-center space-x-2">
             <label className="text-gray-500 w-2/5">Gross Profit Percentage:</label>
             <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
@@ -209,31 +221,36 @@ export default function Calculator({
 
           <h3 className="text-md font-semibold text-gray-700 pt-4">Expenses</h3>
           <div className="space-y-2">
-            {["leadGen", "software", "other"].map((expenseKey) => (
-              <div key={expenseKey} className="flex items-center space-x-2">
-                <label className="text-gray-500 capitalize w-2/5">{expenseKey.replace("Gen", " Generation")}:</label>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                  <input
-                    type="number"
-                    value={expenses[expenseKey as keyof typeof expenses].amount}
-                    onChange={(e) => setExpenses(prev => ({ ...prev, [expenseKey]: { ...prev[expenseKey as keyof typeof expenses], amount: Number(e.target.value) } }))}
-                    className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    placeholder="Amount"
-                  />
+            {["leadGen", "software", "other"].map((expenseKey) => {
+              const displayAmount = expenses[expenseKey as keyof typeof expenses].percentage > 0
+                ? (assignmentFee * expenses[expenseKey as keyof typeof expenses].percentage) / 100
+                : expenses[expenseKey as keyof typeof expenses].amount;
+              return (
+                <div key={expenseKey} className="flex items-center space-x-2">
+                  <label className="text-gray-500 capitalize w-2/5">{expenseKey.replace("Gen", " Generation")}:</label>
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                    <input
+                      type="number"
+                      value={displayAmount || ''}
+                      onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'amount', Number(e.target.value))}
+                      className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                      placeholder="Amount"
+                    />
+                  </div>
+                  <div className="relative flex-1">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
+                    <input
+                      type="number"
+                      value={expenses[expenseKey as keyof typeof expenses].percentage || ''}
+                      onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'percentage', Number(e.target.value))}
+                      className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                      placeholder="Percentage"
+                    />
+                  </div>
                 </div>
-                <div className="relative flex-1">
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
-                  <input
-                    type="number"
-                    value={expenses[expenseKey as keyof typeof expenses].percentage}
-                    onChange={(e) => setExpenses(prev => ({ ...prev, [expenseKey]: { ...prev[expenseKey as keyof typeof expenses], percentage: Number(e.target.value) } }))}
-                    className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    placeholder="Percentage"
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
