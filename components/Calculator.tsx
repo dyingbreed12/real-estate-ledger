@@ -30,14 +30,44 @@ export default function Calculator({
     other: { amount: 0, percentage: 0 },
   });
 
+  const [novationState, setNovationState] = useState({
+    soldPrice: 0,
+    contractedPrice: 0,
+    buyerAgentPercentage: 3,
+    listingAgentPercentage: 3,
+    closingCostsPercentage: 2,
+  });
+
   const selectedEmployee = employees.find((emp) => emp.id === selectedEmployeeId);
 
+  // Novation-specific calculations
+  const totalRevenue = useMemo(() => {
+    return novationState.soldPrice - novationState.contractedPrice;
+  }, [novationState.soldPrice, novationState.contractedPrice]);
+
+  const buyerAgentAmount = useMemo(() => {
+    return (novationState.buyerAgentPercentage / 100) * novationState.soldPrice;
+  }, [novationState.buyerAgentPercentage, novationState.soldPrice]);
+
+  const listingAgentAmount = useMemo(() => {
+    return (novationState.listingAgentPercentage / 100) * novationState.soldPrice;
+  }, [novationState.listingAgentPercentage, novationState.soldPrice]);
+
+  const closingCostsAmount = useMemo(() => {
+    return (novationState.closingCostsPercentage / 100) * novationState.soldPrice;
+  }, [novationState.closingCostsPercentage, novationState.soldPrice]);
+
+  const totalAssignmentFeeNovation = useMemo(() => {
+    return totalRevenue - (buyerAgentAmount + listingAgentAmount + closingCostsAmount);
+  }, [totalRevenue, buyerAgentAmount, listingAgentAmount, closingCostsAmount]);
+
   const yourAssignmentFee = useMemo(() => {
+    const totalFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
     if (ownershipType === "JV Split") {
-      return assignmentFee * (ownershipPercentage / 100);
+      return totalFee * (ownershipPercentage / 100);
     }
-    return assignmentFee;
-  }, [assignmentFee, ownershipType, ownershipPercentage]);
+    return totalFee;
+  }, [assignmentFee, ownershipType, ownershipPercentage, plMode, totalAssignmentFeeNovation]);
 
   const totalCommission = useMemo(() => {
     if (!selectedEmployee) return 0;
@@ -46,44 +76,42 @@ export default function Calculator({
       const calculatedAmount = c.salaryValue > 0 
         ? c.salaryValue 
         : (yourAssignmentFee * c.commissionValue) / 100;
-      let totalForCommission = calculatedAmount;
-      
-      if (plMode === "Novation") {
-        totalForCommission *= 0.9;
-      }
-      return total + totalForCommission;
+      return total + calculatedAmount;
     }, 0);
-  }, [selectedEmployee, yourAssignmentFee, plMode]);
+  }, [selectedEmployee, yourAssignmentFee]);
 
   const totalExpenses = useMemo(() => {
-    const leadGenAmount = expenses.leadGen.percentage > 0 ? (assignmentFee * expenses.leadGen.percentage) / 100 : expenses.leadGen.amount;
-    const softwareAmount = expenses.software.percentage > 0 ? (assignmentFee * expenses.software.percentage) / 100 : expenses.software.amount;
-    const otherAmount = expenses.other.percentage > 0 ? (assignmentFee * expenses.other.percentage) / 100 : expenses.other.amount;
+    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+    const leadGenAmount = expenses.leadGen.percentage > 0 ? (baseFee * expenses.leadGen.percentage) / 100 : expenses.leadGen.amount;
+    const softwareAmount = expenses.software.percentage > 0 ? (baseFee * expenses.software.percentage) / 100 : expenses.software.amount;
+    const otherAmount = expenses.other.percentage > 0 ? (baseFee * expenses.other.percentage) / 100 : expenses.other.amount;
     
     return leadGenAmount + softwareAmount + otherAmount;
-  }, [assignmentFee, expenses]);
+  }, [assignmentFee, totalAssignmentFeeNovation, expenses, plMode]);
 
   const grossProfit = useMemo(() => {
     return yourAssignmentFee - totalCommission;
   }, [yourAssignmentFee, totalCommission]);
 
   const grossProfitPercentage = useMemo(() => {
-    // We have to round to match spreadsheet calculations.
-    return Math.round(assignmentFee > 0 ? (grossProfit / assignmentFee) * 100 : 0) ;
-  }, [grossProfit, assignmentFee]);
+    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+    return Math.round(baseFee > 0 ? (grossProfit / baseFee) * 100 : 0);
+  }, [grossProfit, assignmentFee, totalAssignmentFeeNovation, plMode]);
 
   const netProfit = useMemo(() => {
     let baseProfit = grossProfit - totalExpenses;
 
     if (plMode === "Novation") {
-      baseProfit *= 0.95;
+        return baseProfit
     }
 
     return baseProfit;
   }, [grossProfit, totalExpenses, plMode]);
 
   const totalExpensesPercentage = useMemo(() => {
-    return expenses.leadGen.percentage + expenses.software.percentage + expenses.other.percentage;
+    // The spreadsheet only shows a percentage for Lead Generation in the expenses section.
+    // The Net Profit percentage is derived from Gross Profit % minus Lead Gen %.
+    return expenses.leadGen.percentage;
   }, [expenses]);
   
   const netProfitMargin = useMemo(() => {
@@ -100,7 +128,6 @@ export default function Calculator({
       [expenseKey]: {
         ...prev[expenseKey],
         [field]: value,
-        // Reset the other field to 0 when one is changed
         [field === 'amount' ? 'percentage' : 'amount']: 0
       }
     }));
@@ -135,7 +162,7 @@ export default function Calculator({
         </div>
       </div>
 
-      {plMode === "Assignment" && (
+      {plMode === "Assignment" ? (
         <div className="space-y-4">
           <h3 className="text-md font-semibold text-gray-700">Assignment Fees</h3>
           <div className="flex items-center space-x-2">
@@ -157,103 +184,181 @@ export default function Calculator({
               ${yourAssignmentFee.toLocaleString()}
             </span>
           </div>
-
-          <h3 className="text-md font-semibold text-gray-700 pt-4">Commissions</h3>
-          {employees.length > 0 && (
-            <div>
-              <label className="block mb-1 font-medium">Select Employee:</label>
-              <select
-                value={selectedEmployeeId || ''}
-                onChange={(e) => setSelectedEmployeeId(Number(e.target.value))}
-                className="border p-2 rounded-md w-full mb-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              >
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </option>
-                ))}
-              </select>
-
-              {selectedEmployee != null && selectedEmployee?.commissions?.length > 0 ? (
-                <div className="text-sm text-gray-700 space-y-2">
-                  <div className="grid grid-cols-3 gap-2 font-semibold text-gray-600 border-b pb-1 mb-2">
-                      <span>Name</span>
-                      <span>Amount</span>
-                      <span>Commission</span>
-                  </div>
-                  {selectedEmployee.commissions.map((c, index) => {
-                    const displayAmount = c.salaryValue > 0
-                      ? c.salaryValue
-                      : (yourAssignmentFee * c.commissionValue) / 100;
-                    
-                    const displayPercentage = c.commissionValue > 0
-                      ? c.commissionValue
-                      : (c.salaryValue / yourAssignmentFee) * 100;
-
-                    return (
-                      <div key={index} className="grid grid-cols-3 gap-2 items-center">
-                        <span className="font-medium">{c.name}</span>
-                        <span>${displayAmount.toLocaleString()}</span>
-                        <span>{displayPercentage.toFixed(2)}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No commissions added for this employee.</p>
-              )}
-            </div>
-          )}
-
-          <h3 className="text-md font-semibold text-gray-700 pt-4">Gross Profit</h3>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="text-md font-semibold text-gray-700">Novation Fees</h3>
           <div className="flex items-center space-x-2">
-            <label className="text-gray-500 w-2/5">Gross Profit Amount:</label>
-            <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
-              ${grossProfit.toLocaleString()}
-            </span>
+            <label className="text-gray-500 w-2/5">Sold Price:</label>
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+              <input
+                type="number"
+                value={novationState.soldPrice}
+                onChange={(e) => setNovationState({...novationState, soldPrice: Number(e.target.value)})}
+                className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
             </div>
+          </div>
           <div className="flex items-center space-x-2">
-            <label className="text-gray-500 w-2/5">Gross Profit Percentage:</label>
+            <label className="text-gray-500 w-2/5">Contracted Price:</label>
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+              <input
+                type="number"
+                value={novationState.contractedPrice}
+                onChange={(e) => setNovationState({...novationState, contractedPrice: Number(e.target.value)})}
+                className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-gray-500 w-2/5">Total Revenue:</label>
             <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
-              {grossProfitPercentage.toFixed(2)}%
+              ${totalRevenue.toLocaleString()}
             </span>
           </div>
-
-          <h3 className="text-md font-semibold text-gray-700 pt-4">Expenses</h3>
+          
+          <h3 className="text-md font-semibold text-gray-700 pt-4">Commissions & Costs</h3>
           <div className="space-y-2">
-            {["leadGen", "software", "other"].map((expenseKey) => {
-              const displayAmount = expenses[expenseKey as keyof typeof expenses].percentage > 0
-                ? (assignmentFee * expenses[expenseKey as keyof typeof expenses].percentage) / 100
-                : expenses[expenseKey as keyof typeof expenses].amount;
-              return (
-                <div key={expenseKey} className="flex items-center space-x-2">
-                  <label className="text-gray-500 capitalize w-2/5">{expenseKey.replace("Gen", " Generation")}:</label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      value={displayAmount || ''}
-                      onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'amount', Number(e.target.value))}
-                      className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                      placeholder="Amount"
-                    />
-                  </div>
-                  <div className="relative flex-1">
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
-                    <input
-                      type="number"
-                      value={expenses[expenseKey as keyof typeof expenses].percentage || ''}
-                      onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'percentage', Number(e.target.value))}
-                      className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                      placeholder="Percentage"
-                    />
-                  </div>
+            {[{ label: "Buyer Agent", key: "buyerAgentPercentage", amount: buyerAgentAmount },
+             { label: "Listing Agent", key: "listingAgentPercentage", amount: listingAgentAmount },
+             { label: "Closing Costs", key: "closingCostsPercentage", amount: closingCostsAmount }]
+             .map((item) => (
+              <div key={item.key} className="flex items-center space-x-2">
+                <label className="text-gray-500 w-2/5">{item.label}:</label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                  <input
+                    type="text"
+                    value={item.amount.toLocaleString()}
+                    readOnly
+                    className="border p-2 pl-6 rounded-md w-full bg-gray-100 text-gray-700 focus:outline-none"
+                  />
                 </div>
-              );
-            })}
+                <div className="relative flex-1">
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
+                  <input
+                    type="number"
+                    value={novationState[item.key as keyof typeof novationState] || ''}
+                    onChange={(e) => setNovationState({...novationState, [item.key]: Number(e.target.value)})}
+                    className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <label className="text-gray-500 w-2/5">Total Assignment Fee:</label>
+            <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+              ${totalAssignmentFeeNovation.toLocaleString()}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-gray-500 w-2/5">Your Assignment Fee:</label>
+            <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+              ${yourAssignmentFee.toLocaleString()}
+            </span>
           </div>
         </div>
       )}
+
+      <h3 className="text-md font-semibold text-gray-700 pt-4">Commissions</h3>
+      {employees.length > 0 && (
+        <div>
+          <label className="block mb-1 font-medium">Select Employee:</label>
+          <select
+            value={selectedEmployeeId || ''}
+            onChange={(e) => setSelectedEmployeeId(Number(e.target.value))}
+            className="border p-2 rounded-md w-full mb-2 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+          >
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.name}
+              </option>
+            ))}
+          </select>
+
+          {selectedEmployee != null && selectedEmployee?.commissions?.length > 0 ? (
+            <div className="text-sm text-gray-700 space-y-2">
+              <div className="grid grid-cols-3 gap-2 font-semibold text-gray-600 border-b pb-1 mb-2">
+                  <span>Name</span>
+                  <span>Amount</span>
+                  <span>Commission</span>
+              </div>
+              {selectedEmployee.commissions.map((c, index) => {
+                const displayAmount = c.salaryValue > 0
+                  ? c.salaryValue
+                  : (yourAssignmentFee * c.commissionValue) / 100;
+                
+                const displayPercentage = c.commissionValue > 0
+                  ? c.commissionValue
+                  : (c.salaryValue / yourAssignmentFee) * 100;
+
+                return (
+                  <div key={index} className="grid grid-cols-3 gap-2 items-center">
+                    <span className="font-medium">{c.name}</span>
+                    <span>${displayAmount.toLocaleString()}</span>
+                    <span>{displayPercentage.toFixed(2)}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No commissions added for this employee.</p>
+          )}
+        </div>
+      )}
+
+      <h3 className="text-md font-semibold text-gray-700 pt-4">Gross Profit</h3>
+      <div className="flex items-center space-x-2">
+        <label className="text-gray-500 w-2/5">Gross Profit Amount:</label>
+        <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+          ${grossProfit.toLocaleString()}
+        </span>
+        </div>
+      <div className="flex items-center space-x-2">
+        <label className="text-gray-500 w-2/5">Gross Profit Percentage:</label>
+        <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+          {grossProfitPercentage.toFixed(2)}%
+        </span>
+      </div>
+
+      <h3 className="text-md font-semibold text-gray-700 pt-4">Expenses</h3>
+      <div className="space-y-2">
+        {["leadGen", "software", "other"].map((expenseKey) => {
+          const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+          const displayAmount = expenses[expenseKey as keyof typeof expenses].percentage > 0
+            ? (baseFee * expenses[expenseKey as keyof typeof expenses].percentage) / 100
+            : expenses[expenseKey as keyof typeof expenses].amount;
+          return (
+            <div key={expenseKey} className="flex items-center space-x-2">
+              <label className="text-gray-500 capitalize w-2/5">{expenseKey.replace("Gen", " Generation")}:</label>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                <input
+                  type="number"
+                  value={displayAmount || ''}
+                  onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'amount', Number(e.target.value))}
+                  className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="Amount"
+                />
+              </div>
+              <div className="relative flex-1">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
+                <input
+                  type="number"
+                  value={expenses[expenseKey as keyof typeof expenses].percentage || ''}
+                  onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'percentage', Number(e.target.value))}
+                  className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="Percentage"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
