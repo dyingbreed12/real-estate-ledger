@@ -25,7 +25,7 @@ export default function Address({
 
       <div className="space-y-4">
         {/* Address Input */}
-        <div>
+        {/* <div>
           <label className="block mb-1 font-medium">Address:</label>
           <input
             type="text"
@@ -34,7 +34,7 @@ export default function Address({
             placeholder="Enter property address"
             className="border p-2 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
           />
-        </div>
+        </div> */}
 
         {/* Ownership Type */}
         <div>

@@ -35,12 +35,16 @@ export default function CrystalBallPage() {
 
           <label className="flex-1">
             Average Assignment Fee
-            <input
-              type="number"
-              value={avgAssignmentFee}
-              onChange={(e) => setAvgAssignmentFee(Number(e.target.value))}
-              className="w-full border p-2 rounded-md"
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+              <input
+                type="number"
+                value={avgAssignmentFee}
+                onChange={(e) => setAvgAssignmentFee(Number(e.target.value))}
+                className="w-full border p-2 rounded-md pl-8"
+                step="1000"
+              />
+            </div>
           </label>
         </div>
 
