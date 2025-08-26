@@ -130,7 +130,7 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
         {employees.map((emp) => (
           <div key={emp.id} className="border p-3 rounded-md">
             <div className="flex justify-between items-center mb-2">
-              <span className="font-medium">{emp.name}</span>
+              <span className="font-medium text-gray-800">{emp.name}</span>
               <button
                 onClick={() => confirmRemoveEmployee(emp)}
                 className="text-red-600 hover:text-red-800 transition-colors flex items-center space-x-1"
@@ -193,27 +193,33 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
               </button>
             </div>
 
-            <ul className="text-gray-700 text-sm">
-              {emp.commissions.map((c, idx) => (
-                <li key={idx} className="flex justify-between items-center">
-                  <span>
-                    {c.name}:{" "}
-                    {c.salaryValue > 0 && <>${c.salaryValue} (Salary)</>}
-                    {c.salaryValue > 0 && c.commissionValue > 0 && ", "}
-                    {c.commissionValue > 0 && <>{c.commissionValue}% (Commission)</>}
-                  </span>
-                  <button
-                    onClick={() => removeCommission(emp.id, idx)}
-                    className="p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-red-500 transition-colors"
-                    aria-label={`Remove commission for ${c.name}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-4">
+              <div className="grid grid-cols-[1fr,1fr,1fr,auto] text-xs font-semibold text-gray-500 border-b pb-1 mb-2">
+                <span>Role</span>
+                <span>Amount ($)</span>
+                <span>Commission (%)</span>
+                <span className="sr-only">Actions</span>
+              </div>
+              <ul className="text-gray-700 text-sm space-y-2">
+                {emp.commissions.map((c, idx) => (
+                  <li key={idx} className="grid grid-cols-[1fr,1fr,1fr,auto] gap-2 items-center">
+                    <span className="font-medium truncate">{c.name}</span>
+                    <span className="text-gray-900">${c.salaryValue.toLocaleString()}</span>
+                    <span className="text-gray-900">{c.commissionValue}%</span>
+                    <button
+                      onClick={() => removeCommission(emp.id, idx)}
+                      className="text-red-500 hover:text-red-700 transition-colors justify-self-end"
+                      aria-label={`Remove commission for ${c.name}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
           </div>
         ))}
       </div>
