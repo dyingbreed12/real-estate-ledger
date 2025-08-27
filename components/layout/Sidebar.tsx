@@ -11,8 +11,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
 
   const links = [
-    { name: "Dashboard", href: "/" },
-    { name: "Crystal Ball", href: "/crystal-ball" },
+    { name: "Business Calculator", href: "/" },
+    { name: "Crystal Ball Calculator", href: "/crystal-ball" },
+    { name: "Low Ball AI", href: "https://offeraibot.netlify.app/" },
   ];
 
   return (
@@ -22,7 +23,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
       `}
     >
-      <h1 className="text-xl font-bold mb-6">Ledger App</h1>
+      <h1 className="text-xl font-bold mb-6">Dashboard</h1>
       <nav className="flex flex-col space-y-2">
         {links.map((link) => (
           <Link

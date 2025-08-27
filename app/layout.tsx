@@ -2,7 +2,7 @@ import "./globals.css";
 import SidebarWrapper from "@/components/layout/SidebarWrapper";
 
 export const metadata = {
-  title: "Ledger App",
+  title: "Business Calculator",
   description: "Dashboard",
 };
 

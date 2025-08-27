@@ -14,7 +14,7 @@ export default function CrystalBallPage() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen space-y-6 -mt-12">
-      <h1 className="text-2xl font-bold">Crystal Ball Forecast</h1>
+      <h1 className="text-2xl font-bold">Crystal Ball Calculator</h1>
 
       {/* Message */}
       <p className="text-gray-600 text-sm mt-1">
