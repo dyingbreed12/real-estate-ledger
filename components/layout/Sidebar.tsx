@@ -13,7 +13,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const links = [
     { name: "Business Calculator", href: "/" },
     { name: "Crystal Ball Calculator", href: "/crystal-ball" },
-    { name: "Low Ball AI", href: "https://offeraibot.netlify.app/" },
+    { name: "Lowball AI", href: "https://offeraibot.netlify.app/" },
   ];
 
   return (
