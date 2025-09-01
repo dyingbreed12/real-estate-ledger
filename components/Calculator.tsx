@@ -70,13 +70,32 @@ export default function Calculator({
     return totalRevenue - (buyerAgentAmount + listingAgentAmount + closingCostsAmount);
   }, [totalRevenue, buyerAgentAmount, listingAgentAmount, closingCostsAmount]);
 
+  // Use a single variable for the total fee based on the selected mode
+  const totalAssignmentFee = useMemo(() => {
+    return plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+  }, [plMode, assignmentFee, totalAssignmentFeeNovation]);
+
+  // This useEffect hook handles the dynamic update for both modes, using only totalAssignmentFee
+  useEffect(() => {
+    setExpenses(prevExpenses => {
+      const newExpenses = { ...prevExpenses };
+      const baseFee = totalAssignmentFee; // Use the single, consistent variable
+
+      if (baseFee > 0) {
+        newExpenses.leadGen.amount = (baseFee * newExpenses.leadGen.percentage) / 100;
+        newExpenses.software.amount = (baseFee * newExpenses.software.percentage) / 100;
+        newExpenses.other.amount = (baseFee * newExpenses.other.percentage) / 100;
+      }
+      return newExpenses;
+    });
+  }, [totalAssignmentFee, plMode]); // Depend on totalAssignmentFee and plMode
+
   const yourAssignmentFee = useMemo(() => {
-    const totalFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
     if (ownershipType === "JV Split") {
-      return totalFee * (ownershipPercentage / 100);
+      return totalAssignmentFee * (ownershipPercentage / 100);
     }
-    return totalFee;
-  }, [assignmentFee, ownershipType, ownershipPercentage, plMode, totalAssignmentFeeNovation]);
+    return totalAssignmentFee;
+  }, [totalAssignmentFee, ownershipType, ownershipPercentage]);
 
   const totalCommission = useMemo(() => {
     if (!selectedEmployee) return 0;
@@ -89,31 +108,44 @@ export default function Calculator({
     }, 0);
   }, [selectedEmployee, yourAssignmentFee, employees]);
 
+  // This useEffect hook handles the dynamic update for both modes, using only totalAssignmentFee
+  useEffect(() => {
+    setExpenses(prevExpenses => {
+      const newExpenses = { ...prevExpenses };
+      
+      // Check if the base fee is a valid number to avoid division by zero
+      if (totalAssignmentFee > 0) {
+        // Recalculate amounts based on the new totalAssignmentFee and the existing percentages
+        newExpenses.leadGen.amount = (totalAssignmentFee * newExpenses.leadGen.percentage) / 100;
+        newExpenses.software.amount = (totalAssignmentFee * newExpenses.software.percentage) / 100;
+        newExpenses.other.amount = (totalAssignmentFee * newExpenses.other.percentage) / 100;
+      }
+      return newExpenses;
+    });
+  }, [totalAssignmentFee]);
+
   const totalExpenses = useMemo(() => {
-    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
-    const leadGenAmount = expenses.leadGen.percentage > 0 ? (baseFee * expenses.leadGen.percentage) / 100 : expenses.leadGen.amount;
-    const softwareAmount = expenses.software.percentage > 0 ? (baseFee * expenses.software.percentage) / 100 : expenses.software.amount;
-    const otherAmount = expenses.other.percentage > 0 ? (baseFee * expenses.other.percentage) / 100 : expenses.other.amount;
-    
-    return leadGenAmount + softwareAmount + otherAmount;
-  }, [assignmentFee, totalAssignmentFeeNovation, expenses, plMode]);
+    // Correctly calculate total expenses by summing up the amounts from the state
+    return expenses.leadGen.amount + expenses.software.amount + expenses.other.amount;
+  }, [expenses]);
 
   const grossProfit = useMemo(() => {
     return yourAssignmentFee - totalCommission;
   }, [yourAssignmentFee, totalCommission]);
 
   const grossProfitPercentage = useMemo(() => {
-    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
-    return Math.round(baseFee > 0 ? (grossProfit / baseFee) * 100 : 0);
-  }, [grossProfit, assignmentFee, totalAssignmentFeeNovation, plMode]);
+    return Math.round(totalAssignmentFee > 0 ? (grossProfit / totalAssignmentFee) * 100 : 0);
+  }, [grossProfit, totalAssignmentFee]);
 
   const netProfit = useMemo(() => {
     const baseProfit = grossProfit - totalExpenses;
     return Math.round(baseProfit);
   }, [grossProfit, totalExpenses]);
+  
   const totalExpensesPercentage = useMemo(() => {
-    return expenses.leadGen.percentage + expenses.software.percentage + expenses.other.percentage;
-  }, [expenses]);
+    // Recalculate the total percentage based on the final total expenses amount
+    return totalAssignmentFee > 0 ? (totalExpenses / totalAssignmentFee) * 100 : 0;
+  }, [totalExpenses, totalAssignmentFee]);
   
   const netProfitMargin = useMemo(() => {
     return grossProfitPercentage - totalExpensesPercentage;
@@ -124,27 +156,26 @@ export default function Calculator({
     setNetProfitMargin(netProfitMargin);
   }, [netProfit, netProfitMargin, setNetProfit, setNetProfitMargin]);
 
-  // FIX: Updated handleExpenseChange to calculate the reciprocal value instead of zeroing out
+  // handleExpenseChange is a separate handler for direct user input
   const handleExpenseChange = (expenseKey: keyof typeof expenses, field: 'amount' | 'percentage', value: number) => {
     setExpenses(prev => {
-      const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
       const newExpenses = { ...prev };
       
       if (field === 'amount') {
         newExpenses[expenseKey] = {
           amount: value,
-          percentage: baseFee > 0 ? (value / baseFee) * 100 : 0
+          percentage: totalAssignmentFee > 0 ? (value / totalAssignmentFee) * 100 : 0
         };
       } else { // field === 'percentage'
         newExpenses[expenseKey] = {
-          amount: (baseFee * value) / 100,
+          amount: (totalAssignmentFee * value) / 100,
           percentage: value
         };
       }
       return newExpenses;
     });
   };
-
+  
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6">
       <h2 className="text-lg font-semibold">Profit Calculator</h2>
@@ -340,7 +371,6 @@ export default function Calculator({
       <h3 className="text-md font-semibold text-gray-700 pt-4">Expenses</h3>
       <div className="space-y-2">
         {["leadGen", "software", "other"].map((expenseKey) => {
-          const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
           const expenseData = expenses[expenseKey as keyof typeof expenses];
           
           return (
