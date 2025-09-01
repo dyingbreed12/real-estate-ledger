@@ -21,58 +21,61 @@ export default function DashboardPage() {
   const [ownershipType, setOwnershipType] = useState<OwnershipType>(DEFAULT_OWNERSHIP_TYPE);
   const [ownershipPercentage, setOwnershipPercentage] = useState(DEFAULT_OWNERSHIP_PERCENTAGE);
   const [assignmentFee, setAssignmentFee] = useState(DEFAULT_ASSIGNMENT_FEE);
-  
+
   // New state variables to hold final calculated values
   const [netProfit, setNetProfit] = useState(0);
   const [netProfitMargin, setNetProfitMargin] = useState(0);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedEmployees = localStorage.getItem("employees");
-        let parsedEmployees: Employee[] = DEFAULT_EMPLOYEES;
-        if (storedEmployees) {
-          try {
-            const parsed = JSON.parse(storedEmployees);
-            if (Array.isArray(parsed) && parsed.every(emp => typeof emp === 'object' && emp !== null)) {
-              parsedEmployees = parsed as Employee[];
-            } else {
-              // Clear invalid data
-              console.warn("Invalid employees data in localStorage. Clearing it.");
-              localStorage.removeItem("employees");
-            }
-          } catch (error) {
-            console.error("Failed to parse employees from localStorage:", error);
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    try {
+      const storedEmployees = localStorage.getItem("employees");
+      let parsedEmployees: Employee[] = DEFAULT_EMPLOYEES;
+      if (storedEmployees) {
+        try {
+          const parsed = JSON.parse(storedEmployees);
+          // Stronger validation: Check if it's an array and if all items are objects
+          if (Array.isArray(parsed) && parsed.every(emp => typeof emp === 'object' && emp !== null)) {
+            parsedEmployees = parsed as Employee[];
+          } else {
+            // Invalid data found, log a warning and clear it
+            console.warn("Invalid employees data in localStorage. Clearing it.");
             localStorage.removeItem("employees");
           }
+        } catch (error) {
+          console.error("Failed to parse employees from localStorage:", error);
+          localStorage.removeItem("employees");
         }
-        setEmployees(parsedEmployees);
-
-        const storedAddress = localStorage.getItem("address");
-        setAddress(typeof storedAddress === 'string' ? storedAddress : DEFAULT_ADDRESS);
-
-        const storedOwnershipType = localStorage.getItem("ownershipType") as OwnershipType;
-        setOwnershipType(storedOwnershipType === "Direct" || storedOwnershipType === "JV Split" ? storedOwnershipType : DEFAULT_OWNERSHIP_TYPE);
-
-        const storedOwnershipPercentage = localStorage.getItem("ownershipPercentage");
-        setOwnershipPercentage(storedOwnershipPercentage && !isNaN(Number(storedOwnershipPercentage)) ? Number(storedOwnershipPercentage) : DEFAULT_OWNERSHIP_PERCENTAGE);
-
-        const storedAssignmentFee = localStorage.getItem("assignmentFee");
-        setAssignmentFee(storedAssignmentFee && !isNaN(Number(storedAssignmentFee)) ? Number(storedAssignmentFee) : DEFAULT_ASSIGNMENT_FEE);
-
-      } catch (error) {
-        console.error("An error occurred while accessing localStorage:", error);
-        // Clear all local storage data if a general error occurs
-        localStorage.clear();
-        setEmployees(DEFAULT_EMPLOYEES);
-        setAddress(DEFAULT_ADDRESS);
-        setOwnershipType(DEFAULT_OWNERSHIP_TYPE);
-        setOwnershipPercentage(DEFAULT_OWNERSHIP_PERCENTAGE);
-        setAssignmentFee(DEFAULT_ASSIGNMENT_FEE);
       }
+      setEmployees(parsedEmployees);
+
+      // Repeat the same validation pattern for other items as needed
+      const storedAddress = localStorage.getItem("address");
+      setAddress(typeof storedAddress === 'string' ? storedAddress : DEFAULT_ADDRESS);
+
+      const storedOwnershipType = localStorage.getItem("ownershipType") as OwnershipType;
+      setOwnershipType(storedOwnershipType === "Direct" || storedOwnershipType === "JV Split" ? storedOwnershipType : DEFAULT_OWNERSHIP_TYPE);
+
+      const storedOwnershipPercentage = localStorage.getItem("ownershipPercentage");
+      setOwnershipPercentage(storedOwnershipPercentage && !isNaN(Number(storedOwnershipPercentage)) ? Number(storedOwnershipPercentage) : DEFAULT_OWNERSHIP_PERCENTAGE);
+
+      const storedAssignmentFee = localStorage.getItem("assignmentFee");
+      setAssignmentFee(storedAssignmentFee && !isNaN(Number(storedAssignmentFee)) ? Number(storedAssignmentFee) : DEFAULT_ASSIGNMENT_FEE);
+
+    } catch (error) {
+      // This catch block handles any other unexpected localStorage access errors.
+      console.error("An error occurred while accessing localStorage:", error);
+      localStorage.clear(); // Clear all data as a failsafe
+      // Reset all states to default values
+      setEmployees(DEFAULT_EMPLOYEES);
+      setAddress(DEFAULT_ADDRESS);
+      setOwnershipType(DEFAULT_OWNERSHIP_TYPE);
+      setOwnershipPercentage(DEFAULT_OWNERSHIP_PERCENTAGE);
+      setAssignmentFee(DEFAULT_ASSIGNMENT_FEE);
     }
-    setHydrated(true);
-  }, []);
+  }
+  setHydrated(true);
+}, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -125,10 +128,8 @@ export default function DashboardPage() {
           setAssignmentFee={setAssignmentFee}
           ownershipType={ownershipType}
           ownershipPercentage={ownershipPercentage}
-          onCalculate={(calculatedNetProfit, calculatedNetProfitMargin) => {
-            setNetProfit(calculatedNetProfit);
-            setNetProfitMargin(calculatedNetProfitMargin);
-          }}
+          setNetProfit={setNetProfit}
+          setNetProfitMargin={setNetProfitMargin}
         />
       </section>
 

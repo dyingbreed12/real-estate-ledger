@@ -8,7 +8,8 @@ type CalculatorProps = {
   setAssignmentFee: React.Dispatch<React.SetStateAction<number>>;
   ownershipType: OwnershipType;
   ownershipPercentage: number;
-  onCalculate: (netProfit: number, netProfitMargin: number) => void;
+  setNetProfit: React.Dispatch<React.SetStateAction<number>>;
+  setNetProfitMargin: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export default function Calculator({
@@ -17,7 +18,8 @@ export default function Calculator({
   setAssignmentFee,
   ownershipType,
   ownershipPercentage,
-  onCalculate,
+  setNetProfit,
+  setNetProfitMargin,
 }: CalculatorProps) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     employees.length > 0 ? employees[0].id : null
@@ -80,12 +82,12 @@ export default function Calculator({
     if (!selectedEmployee) return 0;
     
     return selectedEmployee.commissions.reduce((total, c) => {
-      const calculatedAmount = c.salaryValue > 0 
-        ? c.salaryValue 
+      const calculatedAmount = c.salaryValue > 0
+        ? c.salaryValue
         : (yourAssignmentFee * c.commissionValue) / 100;
       return total + calculatedAmount;
     }, 0);
-  }, [selectedEmployee, yourAssignmentFee, employees]); // Added employees to the dependency array
+  }, [selectedEmployee, yourAssignmentFee, employees]);
 
   const totalExpenses = useMemo(() => {
     const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
@@ -106,28 +108,29 @@ export default function Calculator({
   }, [grossProfit, assignmentFee, totalAssignmentFeeNovation, plMode]);
 
   const netProfit = useMemo(() => {
-    const baseProfit = grossProfit - totalExpenses;
-
-    if (plMode === "Novation") {
-        return baseProfit
-    }
-
-    return baseProfit;
-  }, [grossProfit, totalExpenses, plMode]);
+    return grossProfit - totalExpenses;
+  }, [grossProfit, totalExpenses]);
 
   const totalExpensesPercentage = useMemo(() => {
-    // The spreadsheet only shows a percentage for Lead Generation in the expenses section.
-    // The Net Profit percentage is derived from Gross Profit % minus Lead Gen %.
-    return expenses.leadGen.percentage;
-  }, [expenses]);
+    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+    const totalAmount = expenses.leadGen.amount + expenses.software.amount + expenses.other.amount;
+    const totalPercentage = expenses.leadGen.percentage + expenses.software.percentage + expenses.other.percentage;
+
+    if (totalPercentage > 0) {
+      return totalPercentage;
+    } else {
+      return baseFee > 0 ? (totalAmount / baseFee) * 100 : 0;
+    }
+  }, [expenses, assignmentFee, totalAssignmentFeeNovation, plMode]);
   
   const netProfitMargin = useMemo(() => {
     return grossProfitPercentage - totalExpensesPercentage;
   }, [grossProfitPercentage, totalExpensesPercentage]);
 
   useEffect(() => {
-    onCalculate(netProfit, netProfitMargin);
-  }, [netProfit, netProfitMargin, onCalculate]);
+    setNetProfit(netProfit);
+    setNetProfitMargin(netProfitMargin);
+  }, [netProfit, netProfitMargin, setNetProfit, setNetProfitMargin]);
 
   const handleExpenseChange = (expenseKey: keyof typeof expenses, field: 'amount' | 'percentage', value: number) => {
     setExpenses(prev => ({
@@ -229,9 +232,9 @@ export default function Calculator({
           <h3 className="text-md font-semibold text-gray-700 pt-4">Commissions & Costs</h3>
           <div className="space-y-2">
             {[{ label: "Buyer Agent", key: "buyerAgentPercentage", amount: buyerAgentAmount },
-             { label: "Listing Agent", key: "listingAgentPercentage", amount: listingAgentAmount },
-             { label: "Closing Costs", key: "closingCostsPercentage", amount: closingCostsAmount }]
-             .map((item) => (
+              { label: "Listing Agent", key: "listingAgentPercentage", amount: listingAgentAmount },
+              { label: "Closing Costs", key: "closingCostsPercentage", amount: closingCostsAmount }]
+              .map((item) => (
               <div key={item.key} className="flex items-center space-x-2">
                 <label className="text-gray-500 w-2/5">{item.label}:</label>
                 <div className="relative flex-1">
@@ -326,7 +329,7 @@ export default function Calculator({
         </span>
         </div>
       <div className="flex items-center space-x-2">
-        <label className="text-gray-500 w-2/5">Gross Profit Percentage:</label>
+        <label className="text-gray-500 w-2/5">Gross Profit Margin:</label>
         <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
           {grossProfitPercentage.toFixed(2)}%
         </span>

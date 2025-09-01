@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Employee, Commission } from "@/app/types";
 
 type EmployeeListProps = {
@@ -28,6 +28,18 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     "Underwriter",
     "Other",
   ] as const;
+
+  // Initialize commissionInputs state for new employees added via props
+  useEffect(() => {
+    employees.forEach(emp => {
+      if (!commissionInputs[emp.id]) {
+        setCommissionInputs(prev => ({
+          ...prev,
+          [emp.id]: { name: "", salaryValue: 0, commissionValue: 0 }
+        }));
+      }
+    });
+  }, [employees, commissionInputs]);
 
   const addEmployee = () => {
     if (!newEmployeeName.trim()) return;
