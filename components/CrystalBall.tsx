@@ -31,7 +31,7 @@ export default function CrystalBall({
     setIsAnimating(true);
     setShowResults(false);
 
-    const delay = 2000 + Math.random() * 3000;
+    const delay = 2000;
 
     setTimeout(() => {
       setIsAnimating(false);
@@ -66,7 +66,7 @@ export default function CrystalBall({
               isAnimating ? "animate-fade-out" : ""
             }`}
           >
-            Reveal Forecast
+            Predict the Profits
           </span>
         )}
 

@@ -11,8 +11,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
   const pathname = usePathname();
 
   const links = [
-    { name: "Business Calculator", href: "/" },
-    { name: "Crystal Ball Calculator", href: "/crystal-ball" },
+    { name: "Business", href: "/" },
+    { name: "Crystal Ball", href: "/crystal-ball" },
     { name: "Lowball AI", href: "https://offeraibot.netlify.app/" },
   ];
 
