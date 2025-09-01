@@ -75,21 +75,6 @@ export default function Calculator({
     return plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
   }, [plMode, assignmentFee, totalAssignmentFeeNovation]);
 
-  // This useEffect hook handles the dynamic update for both modes, using only totalAssignmentFee
-  useEffect(() => {
-    setExpenses(prevExpenses => {
-      const newExpenses = { ...prevExpenses };
-      const baseFee = totalAssignmentFee; // Use the single, consistent variable
-
-      if (baseFee > 0) {
-        newExpenses.leadGen.amount = (baseFee * newExpenses.leadGen.percentage) / 100;
-        newExpenses.software.amount = (baseFee * newExpenses.software.percentage) / 100;
-        newExpenses.other.amount = (baseFee * newExpenses.other.percentage) / 100;
-      }
-      return newExpenses;
-    });
-  }, [totalAssignmentFee, plMode]); // Depend on totalAssignmentFee and plMode
-
   const yourAssignmentFee = useMemo(() => {
     if (ownershipType === "JV Split") {
       return totalAssignmentFee * (ownershipPercentage / 100);
@@ -112,13 +97,12 @@ export default function Calculator({
   useEffect(() => {
     setExpenses(prevExpenses => {
       const newExpenses = { ...prevExpenses };
-      
-      // Check if the base fee is a valid number to avoid division by zero
-      if (totalAssignmentFee > 0) {
-        // Recalculate amounts based on the new totalAssignmentFee and the existing percentages
-        newExpenses.leadGen.amount = (totalAssignmentFee * newExpenses.leadGen.percentage) / 100;
-        newExpenses.software.amount = (totalAssignmentFee * newExpenses.software.percentage) / 100;
-        newExpenses.other.amount = (totalAssignmentFee * newExpenses.other.percentage) / 100;
+      const baseFee = totalAssignmentFee; // Use the single, consistent variable
+
+      if (baseFee > 0) {
+        newExpenses.leadGen.amount = (baseFee * newExpenses.leadGen.percentage) / 100;
+        newExpenses.software.amount = (baseFee * newExpenses.software.percentage) / 100;
+        newExpenses.other.amount = (baseFee * newExpenses.other.percentage) / 100;
       }
       return newExpenses;
     });
@@ -176,6 +160,10 @@ export default function Calculator({
     });
   };
   
+  const totalCommissionPercentage = useMemo(() => {
+    return yourAssignmentFee > 0 ? (totalCommission / yourAssignmentFee) * 100 : 0;
+  }, [totalCommission, yourAssignmentFee]);
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow space-y-6">
       <h2 className="text-lg font-semibold">Profit Calculator</h2>
@@ -353,6 +341,21 @@ export default function Calculator({
           )}
         </div>
       )}
+
+      {/* New section to display total employee commission */}
+      <h3 className="text-md font-semibold text-gray-700 pt-4">Total Commission</h3>
+      <div className="flex items-center space-x-2">
+        <label className="text-gray-500 w-2/5">Total Commission Amount:</label>
+        <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+          ${totalCommission.toLocaleString()}
+        </span>
+      </div>
+      <div className="flex items-center space-x-2">
+        <label className="text-gray-500 w-2/5">Total Commission Margin:</label>
+        <span className="p-2 flex-1 rounded-md bg-gray-100 text-gray-700">
+          {totalCommissionPercentage.toFixed(2)}%
+        </span>
+      </div>
 
       <h3 className="text-md font-semibold text-gray-700 pt-4">Gross Profit</h3>
       <div className="flex items-center space-x-2">
