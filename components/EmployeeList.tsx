@@ -29,7 +29,6 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
     "Other",
   ] as const;
 
-  // Initialize commissionInputs state for new employees added via props
   useEffect(() => {
     employees.forEach(emp => {
       if (!commissionInputs[emp.id]) {
@@ -116,50 +115,50 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow">
-      <h2 className="text-lg font-semibold mb-4">Employee List</h2>
+    <div className="bg-white p-6 rounded-2xl shadow-xl">
+      <h2 className="text-xl font-bold mb-4 text-gray-800">Employee List</h2>
 
-      <div className="flex mb-4 space-x-2">
+      <div className="flex mb-6 space-x-4">
         <input
           type="text"
           value={newEmployeeName}
           onChange={(e) => setNewEmployeeName(e.target.value)}
           placeholder="New Employee Name"
-          className="border p-2 rounded-md flex-1"
+          className="flex-1 w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 text-gray-900"
         />
         <button
           onClick={addEmployee}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
         >
           Add Employee
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {employees.length === 0 && (
           <p className="text-gray-500">No employees added yet.</p>
         )}
         {employees.map((emp) => (
-          <div key={emp.id} className="border p-3 rounded-md">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-gray-800">{emp.name}</span>
+          <div key={emp.id} className="border border-gray-200 p-4 rounded-xl shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold text-gray-800 text-lg">{emp.name}</span>
               <button
                 onClick={() => confirmRemoveEmployee(emp)}
-                className="text-red-600 hover:text-red-800 transition-colors flex items-center space-x-1"
+                className="text-red-600 hover:text-red-800 transition-colors flex items-center space-x-1 font-medium"
                 aria-label={`Remove ${emp.name}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
                 </svg>
                 <span>Remove</span>
               </button>
             </div>
 
-            <div className="flex space-x-2 mb-2 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4 items-center mb-4">
               <select
                 value={commissionInputs[emp.id]?.name || ""}
                 onChange={(e) => handleInputChange(emp.id, "name", e.target.value)}
-                className="border p-1 rounded-md w-64"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 text-gray-900"
               >
                 <option value="" disabled>
                   Select Role
@@ -171,8 +170,8 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                 ))}
               </select>
 
-              <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+              <div className="relative w-full">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                 <input
                   type="number"
                   placeholder="Salary"
@@ -180,12 +179,12 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                   onChange={(e) =>
                     handleInputChange(emp.id, "salaryValue", Number(e.target.value))
                   }
-                  className="border p-1 pl-6 rounded-md w-48"
+                  className="w-full px-4 py-2 pl-8 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 text-gray-900"
                 />
               </div>
 
-              <div className="relative">
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+              <div className="relative w-full">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
                 <input
                   type="number"
                   placeholder="Commission"
@@ -193,20 +192,20 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                   onChange={(e) =>
                     handleInputChange(emp.id, "commissionValue", Number(e.target.value))
                   }
-                  className="border p-1 pr-6 rounded-md w-48"
+                  className="w-full px-4 py-2 pr-8 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50 text-gray-900"
                 />
               </div>
 
               <button
                 onClick={() => addCommission(emp.id)}
-                className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700 transition-colors"
+                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors font-medium w-full"
               >
                 Add
               </button>
             </div>
 
             <div className="mt-4">
-              <div className="grid grid-cols-[1fr,1fr,1fr,auto] text-xs font-semibold text-gray-500 border-b pb-1 mb-2">
+              <div className="grid grid-cols-[1fr,1fr,1fr,auto] text-sm font-semibold text-gray-600 border-b pb-1 mb-2">
                 <span>Role</span>
                 <span>Amount ($)</span>
                 <span>Commission (%)</span>
@@ -223,7 +222,7 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
                       className="text-red-500 hover:text-red-700 transition-colors justify-self-end"
                       aria-label={`Remove commission for ${c.name}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.728-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
                       </svg>
                     </button>
@@ -237,23 +236,23 @@ export default function EmployeeList({ employees = [], setEmployees }: EmployeeL
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-xl text-center">
-            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-6">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl text-center max-w-sm w-full">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Confirm Deletion</h3>
+            <p className="mb-6 text-gray-600">
               Are you sure you want to remove the employee{" "}
-              <span className="font-bold">{employeeToDelete?.name}</span>?
+              <span className="font-bold text-gray-900">{employeeToDelete?.name}</span>?
             </p>
             <div className="flex justify-center space-x-4">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-100"
+                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRemoveEmployee}
-                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                className="px-6 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors font-medium"
               >
                 Remove
               </button>
