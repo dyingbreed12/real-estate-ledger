@@ -108,20 +108,12 @@ export default function Calculator({
   }, [grossProfit, assignmentFee, totalAssignmentFeeNovation, plMode]);
 
   const netProfit = useMemo(() => {
-    return grossProfit - totalExpenses;
+    const baseProfit = grossProfit - totalExpenses;
+    return Math.round(baseProfit);
   }, [grossProfit, totalExpenses]);
-
   const totalExpensesPercentage = useMemo(() => {
-    const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
-    const totalAmount = expenses.leadGen.amount + expenses.software.amount + expenses.other.amount;
-    const totalPercentage = expenses.leadGen.percentage + expenses.software.percentage + expenses.other.percentage;
-
-    if (totalPercentage > 0) {
-      return totalPercentage;
-    } else {
-      return baseFee > 0 ? (totalAmount / baseFee) * 100 : 0;
-    }
-  }, [expenses, assignmentFee, totalAssignmentFeeNovation, plMode]);
+    return expenses.leadGen.percentage + expenses.software.percentage + expenses.other.percentage;
+  }, [expenses]);
   
   const netProfitMargin = useMemo(() => {
     return grossProfitPercentage - totalExpensesPercentage;
@@ -132,15 +124,25 @@ export default function Calculator({
     setNetProfitMargin(netProfitMargin);
   }, [netProfit, netProfitMargin, setNetProfit, setNetProfitMargin]);
 
+  // FIX: Updated handleExpenseChange to calculate the reciprocal value instead of zeroing out
   const handleExpenseChange = (expenseKey: keyof typeof expenses, field: 'amount' | 'percentage', value: number) => {
-    setExpenses(prev => ({
-      ...prev,
-      [expenseKey]: {
-        ...prev[expenseKey],
-        [field]: value,
-        [field === 'amount' ? 'percentage' : 'amount']: 0
+    setExpenses(prev => {
+      const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
+      const newExpenses = { ...prev };
+      
+      if (field === 'amount') {
+        newExpenses[expenseKey] = {
+          amount: value,
+          percentage: baseFee > 0 ? (value / baseFee) * 100 : 0
+        };
+      } else { // field === 'percentage'
+        newExpenses[expenseKey] = {
+          amount: (baseFee * value) / 100,
+          percentage: value
+        };
       }
-    }));
+      return newExpenses;
+    });
   };
 
   return (
@@ -339,9 +341,8 @@ export default function Calculator({
       <div className="space-y-2">
         {["leadGen", "software", "other"].map((expenseKey) => {
           const baseFee = plMode === "Assignment" ? assignmentFee : totalAssignmentFeeNovation;
-          const displayAmount = expenses[expenseKey as keyof typeof expenses].percentage > 0
-            ? (baseFee * expenses[expenseKey as keyof typeof expenses].percentage) / 100
-            : expenses[expenseKey as keyof typeof expenses].amount;
+          const expenseData = expenses[expenseKey as keyof typeof expenses];
+          
           return (
             <div key={expenseKey} className="flex items-center space-x-2">
               <label className="text-gray-500 capitalize w-2/5">{expenseKey.replace("Gen", " Generation")}:</label>
@@ -349,7 +350,7 @@ export default function Calculator({
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
                 <input
                   type="number"
-                  value={displayAmount || ''}
+                  value={expenseData.amount || ''}
                   onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'amount', Number(e.target.value))}
                   className="border p-2 pl-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                   placeholder="Amount"
@@ -359,7 +360,7 @@ export default function Calculator({
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
                 <input
                   type="number"
-                  value={expenses[expenseKey as keyof typeof expenses].percentage || ''}
+                  value={expenseData.percentage || ''}
                   onChange={(e) => handleExpenseChange(expenseKey as keyof typeof expenses, 'percentage', Number(e.target.value))}
                   className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                   placeholder="Percentage"
