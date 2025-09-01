@@ -38,6 +38,7 @@ export default function Calculator({
     buyerAgentPercentage: 3,
     listingAgentPercentage: 3,
     closingCostsPercentage: 2,
+    otherNovationCostsPercentage: 0, // CORRECTED: Now a percentage
   });
 
   // Ensure the selected employee is up-to-date with the latest employees data
@@ -65,10 +66,16 @@ export default function Calculator({
   const closingCostsAmount = useMemo(() => {
     return (novationState.closingCostsPercentage / 100) * novationState.soldPrice;
   }, [novationState.closingCostsPercentage, novationState.soldPrice]);
+  
+  // NEW: Calculation for other novation costs based on percentage
+  const otherNovationCostsAmount = useMemo(() => {
+    return (novationState.otherNovationCostsPercentage / 100) * novationState.soldPrice;
+  }, [novationState.otherNovationCostsPercentage, novationState.soldPrice]);
 
   const totalAssignmentFeeNovation = useMemo(() => {
-    return totalRevenue - (buyerAgentAmount + listingAgentAmount + closingCostsAmount);
-  }, [totalRevenue, buyerAgentAmount, listingAgentAmount, closingCostsAmount]);
+    // UPDATED: Include the new otherNovationCostsAmount in the total
+    return totalRevenue - (buyerAgentAmount + listingAgentAmount + closingCostsAmount + otherNovationCostsAmount);
+  }, [totalRevenue, buyerAgentAmount, listingAgentAmount, closingCostsAmount, otherNovationCostsAmount]);
 
   // Use a single variable for the total fee based on the selected mode
   const totalAssignmentFee = useMemo(() => {
@@ -97,7 +104,7 @@ export default function Calculator({
   useEffect(() => {
     setExpenses(prevExpenses => {
       const newExpenses = { ...prevExpenses };
-      const baseFee = totalAssignmentFee; // Use the single, consistent variable
+      const baseFee = totalAssignmentFee;
 
       if (baseFee > 0) {
         newExpenses.leadGen.amount = (baseFee * newExpenses.leadGen.percentage) / 100;
@@ -109,7 +116,6 @@ export default function Calculator({
   }, [totalAssignmentFee]);
 
   const totalExpenses = useMemo(() => {
-    // Correctly calculate total expenses by summing up the amounts from the state
     return expenses.leadGen.amount + expenses.software.amount + expenses.other.amount;
   }, [expenses]);
 
@@ -127,7 +133,6 @@ export default function Calculator({
   }, [grossProfit, totalExpenses]);
   
   const totalExpensesPercentage = useMemo(() => {
-    // Recalculate the total percentage based on the final total expenses amount
     return totalAssignmentFee > 0 ? (totalExpenses / totalAssignmentFee) * 100 : 0;
   }, [totalExpenses, totalAssignmentFee]);
   
@@ -140,7 +145,6 @@ export default function Calculator({
     setNetProfitMargin(netProfitMargin);
   }, [netProfit, netProfitMargin, setNetProfit, setNetProfitMargin]);
 
-  // handleExpenseChange is a separate handler for direct user input
   const handleExpenseChange = (expenseKey: keyof typeof expenses, field: 'amount' | 'percentage', value: number) => {
     setExpenses(prev => {
       const newExpenses = { ...prev };
@@ -252,10 +256,12 @@ export default function Calculator({
           
           <h3 className="text-md font-semibold text-gray-700 pt-4">Commissions & Costs</h3>
           <div className="space-y-2">
-            {[{ label: "Buyer Agent", key: "buyerAgentPercentage", amount: buyerAgentAmount },
-              { label: "Listing Agent", key: "listingAgentPercentage", amount: listingAgentAmount },
-              { label: "Closing Costs", key: "closingCostsPercentage", amount: closingCostsAmount }]
-              .map((item) => (
+            {[
+              { label: "Buyer Agent", key: "buyerAgentPercentage", amount: buyerAgentAmount, isPercentage: true },
+              { label: "Listing Agent", key: "listingAgentPercentage", amount: listingAgentAmount, isPercentage: true },
+              { label: "Closing Costs", key: "closingCostsPercentage", amount: closingCostsAmount, isPercentage: true },
+              { label: "Other Novation Costs", key: "otherNovationCostsPercentage", amount: otherNovationCostsAmount, isPercentage: true }
+            ].map((item) => (
               <div key={item.key} className="flex items-center space-x-2">
                 <label className="text-gray-500 w-2/5">{item.label}:</label>
                 <div className="relative flex-1">
@@ -267,15 +273,17 @@ export default function Calculator({
                     className="border p-2 pl-6 rounded-md w-full bg-gray-100 text-gray-700 focus:outline-none"
                   />
                 </div>
-                <div className="relative flex-1">
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
-                  <input
-                    type="number"
-                    value={novationState[item.key as keyof typeof novationState] || ''}
-                    onChange={(e) => setNovationState({...novationState, [item.key]: Number(e.target.value)})}
-                    className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  />
-                </div>
+                {item.isPercentage && (
+                  <div className="relative flex-1">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">%</span>
+                    <input
+                      type="number"
+                      value={novationState[item.key as keyof typeof novationState] || ''}
+                      onChange={(e) => setNovationState({...novationState, [item.key]: Number(e.target.value)})}
+                      className="border p-2 pr-6 rounded-md w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -342,7 +350,6 @@ export default function Calculator({
         </div>
       )}
 
-      {/* New section to display total employee commission */}
       <h3 className="text-md font-semibold text-gray-700 pt-4">Total Commission</h3>
       <div className="flex items-center space-x-2">
         <label className="text-gray-500 w-2/5">Total Commission Amount:</label>
