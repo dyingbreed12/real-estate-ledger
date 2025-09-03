@@ -66,7 +66,7 @@ export default function CrystalBall({
               isAnimating ? "animate-fade-out" : ""
             }`}
           >
-            Predict the Profits
+            Predict Profits
           </span>
         )}
 
